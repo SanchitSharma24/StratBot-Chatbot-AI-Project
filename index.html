@@ -92,9 +92,17 @@
     }
 
     @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+
+      100% {
+        opacity: 1;
+      }
     }
 
     input[type="text"] {
@@ -139,7 +147,7 @@
     <h2>Strategize Your Way to Victory</h2>
   </div>
 
-  <div class="intro-message">Need a strategy? I’ve got your back.</div>
+  <div class="intro-message">Need a gaming strategy? I’ve got your back.</div>
 
   <div class="chat-container">
     <div class="messages" id="chat"></div>
@@ -153,26 +161,32 @@
   <script>
     const input = document.getElementById("message");
     const chat = document.getElementById("chat");
-
+    let autoScroll = true;
+  
     input.addEventListener("keypress", function (e) {
       if (e.key === "Enter") {
         sendMessage();
       }
     });
-
+  
+    chat.addEventListener('scroll', () => {
+      const atBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 10;
+      autoScroll = atBottom;
+    });
+  
     function sendMessage() {
       const message = input.value.trim();
       if (!message) return;
-
+  
       appendMessage("user", message);
       input.value = "";
-
+  
       const thinking = document.createElement("div");
       thinking.className = "message bot thinking";
       thinking.innerText = "Thinking...";
       chat.appendChild(thinking);
-      chat.scrollTop = chat.scrollHeight;
-
+      scrollChat();
+  
       fetch("/chat", {
         method: "POST",
         headers: {
@@ -184,7 +198,7 @@
         .then((data) => {
           chat.removeChild(thinking);
           if (data.response) {
-            appendMessage("bot", data.response);
+            typeMessage("bot", data.response);
           } else {
             appendMessage("bot", "⚠️ Error: " + data.error);
           }
@@ -194,15 +208,40 @@
           appendMessage("bot", "⚠️ Error: Unable to reach server.");
         });
     }
-
+  
     function appendMessage(sender, text) {
       const msgDiv = document.createElement("div");
       msgDiv.className = `message ${sender}`;
       msgDiv.innerText = text;
       chat.appendChild(msgDiv);
-      chat.scrollTop = chat.scrollHeight;
+      scrollChat();
+    }
+  
+    function scrollChat() {
+      if (autoScroll) {
+        chat.scrollTop = chat.scrollHeight;
+      }
+    }
+  
+    function typeMessage(sender, text) {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `message ${sender}`;
+      chat.appendChild(msgDiv);
+  
+      let i = 0;
+      function typeNextChar() {
+        if (i < text.length) {
+          msgDiv.innerHTML += text[i] === "\n" ? "<br>" : text[i];
+          i++;
+          scrollChat();
+          setTimeout(typeNextChar, 12);
+        }
+      }
+      typeNextChar();
     }
   </script>
+  
 </body>
 
 </html>
+
